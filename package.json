@@ -1,0 +1,31 @@
+{
+    "name": "rollup-plugin-sass-module-bundler",
+    "version": "1.0.0",
+    "description": "A Rollup plugin for transpiling and bunding sass/scss files using sass modules",
+    "main": "index.js",
+    "scripts": {
+      "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "repository": {
+      "type": "git",
+      "url": "git+https://github.com/roberekson/rollup-plugin-sass-module-bundler.git"
+    },
+    "keywords": [
+      "rollup-plugin",
+      "scss",
+      "sass",
+      "css",
+      "rollup"
+    ],
+    "author": {
+      "name": "Rob Erekson",
+      "email": "roberekson@gmail.com",
+      "url": "http://roberekson.com"
+    },
+    "license": "MIT",
+    "bugs": {
+      "url": "https://github.com/roberekson/rollup-plugin-sass-module-bundler/issues"
+    },
+    "homepage": "https://github.com/roberekson/rollup-plugin-sass-module-bundler#readme"
+  }
+  
