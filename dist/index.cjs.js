@@ -74,9 +74,9 @@ const createTransform = (filter) => (code, id) => {
 const watchChange = (id) => {
     console.log('CHANGE');
 };
-const createGenerateBundle = (moduleOptions) => function (options) {
+const createGenerateBundle = (moduleOptions) => function (options, bundle) {
     const path$1 = stylesheets.keys().next().value;
-    const bundleName = path.basename(path$1, path.extname(path$1));
+    const bundleName = getBundleName(bundle) || path$1(path$1, path.extname(path$1));
     let source = '';
     let duration = 0;
     let size = 0;
@@ -116,6 +116,16 @@ const formatSize = (size) => {
             const formattedSize = (size / Math.pow(10, power)).toLocaleString('en-US', { maximumFractionDigits: 1 });
             return `${formattedSize}${label}`;
         }
+    }
+    return '';
+};
+const getBundleName = (bundle) => {
+    const key = Object.keys(bundle).pop();
+    if (bundle[key].type === 'chunk') {
+        return bundle[key].name;
+    }
+    else if (bundle[key].type === 'asset') {
+        return bundle[key].fileName;
     }
     return '';
 };

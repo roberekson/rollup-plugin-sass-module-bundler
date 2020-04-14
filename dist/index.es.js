@@ -1,5 +1,5 @@
 import { createFilter } from '@rollup/pluginutils';
-import { basename, extname } from 'path';
+import { extname } from 'path';
 
 const chalk = require('chalk');
 const sha1 = require('sha1');
@@ -72,9 +72,9 @@ const createTransform = (filter) => (code, id) => {
 const watchChange = (id) => {
     console.log('CHANGE');
 };
-const createGenerateBundle = (moduleOptions) => function (options) {
+const createGenerateBundle = (moduleOptions) => function (options, bundle) {
     const path = stylesheets.keys().next().value;
-    const bundleName = basename(path, extname(path));
+    const bundleName = getBundleName(bundle) || path(path, extname(path));
     let source = '';
     let duration = 0;
     let size = 0;
@@ -114,6 +114,16 @@ const formatSize = (size) => {
             const formattedSize = (size / Math.pow(10, power)).toLocaleString('en-US', { maximumFractionDigits: 1 });
             return `${formattedSize}${label}`;
         }
+    }
+    return '';
+};
+const getBundleName = (bundle) => {
+    const key = Object.keys(bundle).pop();
+    if (bundle[key].type === 'chunk') {
+        return bundle[key].name;
+    }
+    else if (bundle[key].type === 'asset') {
+        return bundle[key].fileName;
     }
     return '';
 };

@@ -100,9 +100,9 @@ const watchChange = (id: string): void => {
     console.log('CHANGE');
 }
 
-const createGenerateBundle = (moduleOptions: Options) => function (options: Record<string, any>) {
+const createGenerateBundle = (moduleOptions: Options) => function (options: Record<string, any>, bundle) {
     const path = stylesheets.keys().next().value;
-    const bundleName = basename(path, extname(path));
+    const bundleName = getBundleName(bundle) || path(path, extname(path));
 
     let source = '';
     let duration = 0;
@@ -153,6 +153,18 @@ const formatSize = (size: number): string => {
             const formattedSize = (size / Math.pow(10, power)).toLocaleString('en-US', { maximumFractionDigits: 1 });
             return `${formattedSize}${label}`;
         }
+    }
+
+    return '';
+}
+
+const getBundleName = (bundle: Record<string, any>): string => {
+    const key = Object.keys(bundle).pop();
+
+    if (bundle[key].type === 'chunk') {
+        return bundle[key].name;
+    } else if (bundle[key].type === 'asset') {
+        return bundle[key].fileName;
     }
 
     return '';
