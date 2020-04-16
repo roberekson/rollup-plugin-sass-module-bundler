@@ -29,6 +29,7 @@ const defaultOptions: Options = {
 
 const stylesheets = new Map;
 const hashLength = 8;
+const transpiledStylesheets = new Set;
 
 const transpile = (scss, filepath, options) => {
     let returnObj = {
@@ -77,6 +78,8 @@ const transpile = (scss, filepath, options) => {
                 size: Buffer.byteLength(result.css, 'utf8'),
             };
 
+            transpiledStylesheets.add(filepath);
+
         } catch (e) {
             outputError(e, filepath);
         }
@@ -88,7 +91,7 @@ const transpile = (scss, filepath, options) => {
 const loadCss = (key: string, options) => {
     let result = [];
 
-    if (isCssFile(key)) {
+    if (isCssFile(key) && !transpiledStylesheets.has(key)) {
         result.push(transpile(stylesheets.get(key).code, key, options));
     }
 

@@ -18,6 +18,7 @@ const defaultOptions = {
 };
 const stylesheets = new Map;
 const hashLength = 8;
+const transpiledStylesheets = new Set;
 const transpile = (scss, filepath, options) => {
     let returnObj = {
         css: '',
@@ -59,6 +60,7 @@ const transpile = (scss, filepath, options) => {
                 duration: result.stats.duration,
                 size: Buffer.byteLength(result.css, 'utf8'),
             };
+            transpiledStylesheets.add(filepath);
         }
         catch (e) {
             outputError(e, filepath);
@@ -68,7 +70,7 @@ const transpile = (scss, filepath, options) => {
 };
 const loadCss = (key, options) => {
     let result = [];
-    if (isCssFile(key)) {
+    if (isCssFile(key) && !transpiledStylesheets.has(key)) {
         result.push(transpile(stylesheets.get(key).code, key, options));
     }
     if (stylesheets.has(key) && 'imports' in stylesheets.get(key)) {
