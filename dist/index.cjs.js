@@ -215,12 +215,13 @@ const createGenerateBundle = (moduleOptions) => function (options, bundle) {
     return;
 };
 const buildFilename = (filename, contents, options) => {
-    const hash = md5(contents);
     let newFilename = options.assetFileNames
         .replace(/\[ext\]/g, 'css')
         .replace(/\[extname\]/g, '.css')
-        .replace(/\[name\]/g, filename)
-        .replace(/\[hash\]/g, hash.substr(0, options.hashLength || hashLength));
+        .replace(/\[name\]/g, filename);
+    if (options.assetFileNames.contains('[hash]')) {
+        newFilename = newFilename.replace(/\[hash\]/g, md5(contents).substr(0, options.hashLength || hashLength));
+    }
     return newFilename;
 };
 const formatSize = (size) => {

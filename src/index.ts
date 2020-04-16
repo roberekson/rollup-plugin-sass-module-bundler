@@ -270,13 +270,14 @@ const createGenerateBundle = (moduleOptions: Options) => function (options: Reco
 }
 
 const buildFilename = (filename: string, contents: string, options: Record<string, any>): string => {
-    const hash = md5(contents);
-
     let newFilename = options.assetFileNames
         .replace(/\[ext\]/g, 'css')
         .replace(/\[extname\]/g, '.css')
-        .replace(/\[name\]/g, filename)
-        .replace(/\[hash\]/g, hash.substr(0, options.hashLength || hashLength));
+        .replace(/\[name\]/g, filename);
+
+    if (options.assetFileNames.contains('[hash]')) {
+        newFilename = newFilename.replace(/\[hash\]/g, md5(contents).substr(0, options.hashLength || hashLength))
+    }
 
     return newFilename;
 }
