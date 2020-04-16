@@ -1,6 +1,6 @@
 {
   "name": "rollup-plugin-sass-module-bundler",
-  "version": "1.0.0-alpha.2",
+  "version": "1.0.0-alpha.3",
   "description": "A Rollup plugin for transpiling and bunding sass/scss files using sass modules",
   "main": "dist/index.cjs.js",
   "module": "dist/index.esm.js",
