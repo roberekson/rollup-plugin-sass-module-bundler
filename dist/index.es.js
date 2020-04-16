@@ -179,30 +179,34 @@ const createGenerateBundle = (moduleOptions) => function (options, bundle) {
     const transpileResult = loadCss(entrypoint, transpileOptions);
     const duration = transpileResult.reduce((acc, cur) => acc += cur.duration, 0);
     const size = transpileResult.reduce((acc, cur) => acc += cur.size, 0);
-    const concatenator = new Concat(transpileOptions.sourceMap, `${moduleOptions.outDir}/${entrypoint}.css`, '\n');
-    transpileResult.forEach(result => {
-        concatenator.add(result.file, result.css, transpileOptions.sourceMap ? result.map : '');
-    });
     const bundleName = getBundleName(bundle) || path.basename(entrypoint, path.extname(entrypoint));
-    const filename = buildFilename(bundleName, concatenator.content, options);
-    this.emitFile({
-        source: concatenator.content,
-        type: 'asset',
-        fileName: filename,
-    });
-    if (transpileOptions.sourceMap) {
-        this.emitFile({
-            source: concatenator.sourceMap,
-            type: 'asset',
-            fileName: `${filename}.map`,
+    if (size > 0) {
+        const concatenator = new Concat(transpileOptions.sourceMap, `${moduleOptions.outDir}/${bundleName}.css`, '\n');
+        transpileResult.forEach(result => {
+            concatenator.add(result.file, result.css, transpileOptions.sourceMap ? result.map : '');
         });
+        const filename = buildFilename(bundleName, concatenator.content, options);
+        this.emitFile({
+            source: concatenator.content,
+            type: 'asset',
+            fileName: filename,
+        });
+        if (transpileOptions.sourceMap) {
+            this.emitFile({
+                source: concatenator.sourceMap,
+                type: 'asset',
+                fileName: `${filename}.map`,
+            });
+        }
+        console.log(chalk.green(`created ${chalk.bold(`${bundleName}.css (${formatSize(size)})`)} in ${chalk.bold(`${duration}ms`)}`));
     }
-    console.log(chalk.green(`created ${chalk.bold(`${bundleName}.css (${formatSize(size)})`)} in ${chalk.bold(`${duration}ms`)}\n`));
+    else {
+        console.log(chalk.yellow(`${chalk.bold('(!)')} Skipped empty file: ${chalk.bold(`${bundleName}.css`)}`));
+    }
     return;
 };
 const buildFilename = (filename, contents, options) => {
     const hash = md5(contents);
-    console.log(hash);
     let newFilename = options.assetFileNames
         .replace(/\[ext\]/g, 'css')
         .replace(/\[extname\]/g, '.css')
@@ -247,6 +251,10 @@ var index = (options = {}) => {
         transform: createTransform(filter),
         watchChange,
         generateBundle: createGenerateBundle(moduleOptions),
+        buildStart: () => {
+            transpiledStylesheets.clear();
+            stylesheets.clear();
+        },
     };
 };
 
