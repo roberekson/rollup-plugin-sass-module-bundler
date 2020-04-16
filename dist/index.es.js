@@ -6,57 +6,80 @@ const sass = require('sass');
 const parseImports = require('parse-es6-imports');
 const path = require('path');
 const fs = require('fs');
+const Concat = require('concat-with-sourcemaps');
+const escapeRegex = require('escape-string-regexp');
 const defaultOptions = {
     include: [/\.s?(a|c)ss$/],
     exclude: [],
     includePaths: [],
     sourceMap: null,
+    outDir: '',
+    sourceRoot: [],
 };
 const stylesheets = new Map;
 const hashLength = 8;
-const transpile = (scss, key, options) => {
+const transpile = (scss, filepath, options) => {
     let returnObj = {
         css: '',
         map: '',
         duration: 0,
         size: 0,
+        file: '',
     };
     if (scss.length) {
         try {
-            const result = sass.renderSync({
-                file: key,
-                outFile: 'build/css/standaloneSiteFooter.css',
+            let sourceRoots = [];
+            if (typeof options.sourceRoot === 'string') {
+                sourceRoots.push(options.sourceRoot);
+            }
+            else if (Array.isArray(options.sourceRoot)) {
+                sourceRoots = options.sourceRoot;
+            }
+            const outFile = `${options.outDir}${sourceRoots.reduce((acc, cur) => acc.replace(cur, ''), filepath)}`.replace(/s(a|c)ss/, 'css');
+            let renderOptions = {
+                file: filepath,
+                outFile: outFile,
                 includePaths: options.includePaths,
-                sourceMap: false,
-            });
+            };
+            if (options.sourceMap) {
+                renderOptions = {
+                    ...renderOptions,
+                    sourceMap: `${outFile.replace(/s(a|c)ss/, 'css')}.map`,
+                    sourceMapRoot: options.outDir,
+                    sourceMapContents: true,
+                };
+            }
+            ;
+            const result = sass.renderSync(renderOptions);
             returnObj = {
                 ...returnObj,
+                file: outFile,
                 css: result.css ? result.css.toString() : '',
-                map: result.map ? result.map.toString() : null,
+                map: options.sourceMap && result.map ? result.map.toString().replace(new RegExp(escapeRegex(options.sourceRoot[0]), 'g'), options.outDir) : null,
                 duration: result.stats.duration,
                 size: Buffer.byteLength(result.css, 'utf8'),
             };
         }
         catch (e) {
-            outputError(e, key);
+            outputError(e, filepath);
         }
-    }
-    if (returnObj.css) {
-        stylesheets.get(key).transpiled = returnObj.css;
     }
     return returnObj;
 };
 const loadCss = (key, options) => {
-    let css = '';
+    let result = [];
     if (isCssFile(key)) {
-        css = transpile(stylesheets.get(key).code, key, options).css;
+        result.push(transpile(stylesheets.get(key).code, key, options));
     }
     if (stylesheets.has(key) && 'imports' in stylesheets.get(key)) {
         stylesheets.get(key).imports.forEach(i => {
-            css += loadCss(i.path, options);
+            result = [
+                ...result,
+                ...loadCss(i.path, options)
+            ];
         });
     }
-    return css;
+    return result;
 };
 const isCssFile = (filename) => {
     return filename.substr(-3) === 'css';
@@ -144,8 +167,6 @@ const watchChange = (id) => {
     console.log('CHANGE');
 };
 const createGenerateBundle = (moduleOptions) => function (options, bundle) {
-    let duration = 0;
-    let size = 0;
     const transpileOptions = {
         ...moduleOptions,
     };
@@ -153,20 +174,28 @@ const createGenerateBundle = (moduleOptions) => function (options, bundle) {
         transpileOptions.sourceMap = true;
     }
     const entrypoint = stylesheets.keys().next().value;
-    const source = loadCss(entrypoint, transpileOptions);
+    const transpileResult = loadCss(entrypoint, transpileOptions);
+    const duration = transpileResult.reduce((acc, cur) => acc += cur.duration, 0);
+    const size = transpileResult.reduce((acc, cur) => acc += cur.size, 0);
+    const concatenator = new Concat(transpileOptions.sourceMap, `${moduleOptions.outDir}/${entrypoint}.css`, '\n');
+    transpileResult.forEach(result => {
+        concatenator.add(result.file, result.css, transpileOptions.sourceMap ? result.map : '');
+    });
     const bundleName = getBundleName(bundle) || path.basename(entrypoint, path.extname(entrypoint));
-    const filename = buildFilename(bundleName, source, options);
+    const filename = buildFilename(bundleName, concatenator.content, options);
     this.emitFile({
-        source,
+        source: concatenator.content,
         type: 'asset',
         fileName: filename,
     });
-    // this.emitFile({
-    //     source: sourceMap,
-    //     type: 'asset',
-    //     fileName: `${filename}.map`,
-    // });
-    console.log(chalk.green(`${chalk.bold('Processed')}: ${bundleName}.css (${formatSize(size)}) in ${duration}ms\n`));
+    if (transpileOptions.sourceMap) {
+        this.emitFile({
+            source: concatenator.sourceMap,
+            type: 'asset',
+            fileName: `${filename}.map`,
+        });
+    }
+    console.log(chalk.green(`created ${chalk.bold(`${bundleName}.css (${formatSize(size)})`)} in ${chalk.bold(`${duration}ms`)}\n`));
     return;
 };
 const buildFilename = (filename, contents, options) => {
