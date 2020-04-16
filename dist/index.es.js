@@ -19,6 +19,7 @@ const defaultOptions = {
 const stylesheets = new Map;
 const hashLength = 8;
 const transpiledStylesheets = new Set;
+let skipNext = false;
 const transpile = (scss, filepath, options) => {
     let returnObj = {
         css: '',
@@ -158,8 +159,10 @@ const addModuleToTree = (name, imports, code) => {
     }
 };
 const createTransform = (filter) => (code, id) => {
-    const imports = getJsImports(code, id);
-    addModuleToTree(id, imports, code);
+    if (!skipNext) {
+        const imports = getJsImports(code, id);
+        addModuleToTree(id, imports, code);
+    }
     if (!filter(id)) {
         return;
     }
@@ -169,6 +172,9 @@ const watchChange = (id) => {
     console.log('CHANGE');
 };
 const createGenerateBundle = (moduleOptions) => function (options, bundle) {
+    if (skipNext) {
+        return;
+    }
     const transpileOptions = {
         ...moduleOptions,
     };
@@ -203,6 +209,7 @@ const createGenerateBundle = (moduleOptions) => function (options, bundle) {
     else {
         console.log(chalk.yellow(`${chalk.bold('(!)')} Skipped empty file: ${chalk.bold(`${bundleName}.css`)}`));
     }
+    skipNext = true;
     return;
 };
 const buildFilename = (filename, contents, options) => {
@@ -254,6 +261,7 @@ var index = (options = {}) => {
         buildStart: () => {
             transpiledStylesheets.clear();
             stylesheets.clear();
+            skipNext = false;
         },
     };
 };

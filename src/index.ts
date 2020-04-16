@@ -30,6 +30,7 @@ const defaultOptions: Options = {
 const stylesheets = new Map;
 const hashLength = 8;
 const transpiledStylesheets = new Set;
+let skipNext = false;
 
 const transpile = (scss, filepath, options) => {
     let returnObj = {
@@ -198,9 +199,10 @@ const addModuleToTree = (name: string, imports, code: string) => {
 }
 
 const createTransform = (filter): Function => (code: string, id: string): string | void => {
-    const imports = getJsImports(code, id);
-
-    addModuleToTree(id, imports, code);
+    if (!skipNext) {
+        const imports = getJsImports(code, id);
+        addModuleToTree(id, imports, code);
+    }
 
     if (!filter(id)) {
         return;
@@ -214,6 +216,10 @@ const watchChange = (id: string): void => {
 }
 
 const createGenerateBundle = (moduleOptions: Options) => function (options: Record<string, any>, bundle) {
+    if (skipNext) {
+        return;
+    }
+
     const transpileOptions = {
         ...moduleOptions,
     };
@@ -244,7 +250,7 @@ const createGenerateBundle = (moduleOptions: Options) => function (options: Reco
             type: 'asset',
             fileName: filename,
         });
-        
+
         if (transpileOptions.sourceMap) {
             this.emitFile({
                 source: concatenator.sourceMap,
@@ -252,11 +258,13 @@ const createGenerateBundle = (moduleOptions: Options) => function (options: Reco
                 fileName: `${filename}.map`,
             });
         }
-
+        
         console.log(chalk.green(`created ${chalk.bold(`${bundleName}.css (${formatSize(size)})`)} in ${chalk.bold(`${duration}ms`)}`));
     } else {
         console.log(chalk.yellow(`${chalk.bold('(!)')} Skipped empty file: ${chalk.bold(`${bundleName}.css`)}`));
     }
+    
+    skipNext = true;
 
     return;
 }
@@ -321,6 +329,7 @@ export default (options = {}) => {
         buildStart: () => {
             transpiledStylesheets.clear();
             stylesheets.clear();
+            skipNext = false;
         },
     };
 }
