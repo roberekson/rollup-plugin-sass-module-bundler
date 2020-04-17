@@ -275,7 +275,7 @@ const buildFilename = (filename: string, contents: string, options: Record<strin
         .replace(/\[extname\]/g, '.css')
         .replace(/\[name\]/g, filename);
 
-    if (options.assetFileNames.contains('[hash]')) {
+    if (options.assetFileNames.includes('[hash]')) {
         newFilename = newFilename.replace(/\[hash\]/g, md5(contents).substr(0, options.hashLength || hashLength))
     }
 
