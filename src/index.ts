@@ -10,20 +10,22 @@ const Concat = require('concat-with-sourcemaps');
 const escapeRegex = require('escape-string-regexp');
 
 interface Options {
-    include: string[] | RegExp[];
     exclude: string[];
+    include: string[] | RegExp[];
     includePaths: string[];
-    sourceMap: boolean;
     outDir: string;
+    outputStyle: "expanded" | "compressed";
+    sourceMap: boolean;
     sourceRoot: string | string[];
 }
 
 const defaultOptions: Options = {
-    include: [/\.s?(a|c)ss$/],
     exclude: [],
+    include: [/\.s?(a|c)ss$/],
     includePaths: [],
-    sourceMap: null,
     outDir: '',
+    outputStyle: "compressed",
+    sourceMap: null,
     sourceRoot: [],
 };
 
@@ -55,8 +57,9 @@ const transpile = (scss, filepath, options) => {
 
             let renderOptions: Record<string, any> = {
                 file: filepath,
-                outFile: outFile,
                 includePaths: options.includePaths,
+                outFile: outFile,
+                outputStyle: options.outputStyle,
             };
 
             if (options.sourceMap) {
@@ -261,7 +264,7 @@ const createGenerateBundle = (moduleOptions: Options) => function (options: Reco
         
         console.log(chalk.green(`created ${chalk.bold(`${bundleName}.css (${formatSize(size)})`)} in ${chalk.bold(`${duration}ms`)}`));
     } else {
-        console.log(chalk.yellow(`${chalk.bold('(!)')} Skipped empty file: ${chalk.bold(`${bundleName}.css`)}`));
+        this.warn(`Skipped empty file: ${bundleName}.css`);
     }
     
     skipNext = true;

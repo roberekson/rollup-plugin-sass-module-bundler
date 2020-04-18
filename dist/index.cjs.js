@@ -11,11 +11,12 @@ const fs = require('fs');
 const Concat = require('concat-with-sourcemaps');
 const escapeRegex = require('escape-string-regexp');
 const defaultOptions = {
-    include: [/\.s?(a|c)ss$/],
     exclude: [],
+    include: [/\.s?(a|c)ss$/],
     includePaths: [],
-    sourceMap: null,
     outDir: '',
+    outputStyle: "compressed",
+    sourceMap: null,
     sourceRoot: [],
 };
 const stylesheets = new Map;
@@ -42,8 +43,9 @@ const transpile = (scss, filepath, options) => {
             const outFile = `${options.outDir}${sourceRoots.reduce((acc, cur) => acc.replace(cur, ''), filepath)}`.replace(/s(a|c)ss/, 'css');
             let renderOptions = {
                 file: filepath,
-                outFile: outFile,
                 includePaths: options.includePaths,
+                outFile: outFile,
+                outputStyle: options.outputStyle,
             };
             if (options.sourceMap) {
                 renderOptions = {
@@ -209,7 +211,7 @@ const createGenerateBundle = (moduleOptions) => function (options, bundle) {
         console.log(chalk.green(`created ${chalk.bold(`${bundleName}.css (${formatSize(size)})`)} in ${chalk.bold(`${duration}ms`)}`));
     }
     else {
-        console.log(chalk.yellow(`${chalk.bold('(!)')} Skipped empty file: ${chalk.bold(`${bundleName}.css`)}`));
+        this.warn(`Skipped empty file: ${bundleName}.css`);
     }
     skipNext = true;
     return;
