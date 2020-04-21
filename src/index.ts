@@ -151,24 +151,31 @@ const outputError = (e, filepath = ''): void => {
 }
 
 const getJsImports = (code: string, absolutePath: string): [] => {
-    const imports = parseImports(code).map(i => {
-        const p = path.parse(i.fromModule);
-        const ext = p.ext ? p.ext.substr(1) : 'js';
-
-        if (['scss', 'sass', 'css', 'ts', 'js'].includes(ext)) {
-            const importPath = getRealPath(p.dir, absolutePath)
-
-            return {
-                name: p.name,
-                type: ext,
-                path: `${importPath}/${p.name}.${ext}`,
-            };
-        }
-
-        return false;
-    }).filter(i => i);
     
-    return imports;
+    // Needed to fix TypeScript injecting code above imports
+    const importStart = code.indexOf('import');
+
+    if (importStart >= 0) {
+        const imports = parseImports(code.substr(code.indexOf('import'))).map(i => {
+            const p = path.parse(i.fromModule);
+            const ext = p.ext ? p.ext.substr(1) : 'js';
+            if (['scss', 'sass', 'css', 'ts', 'js'].includes(ext)) {
+                const importPath = getRealPath(p.dir, absolutePath)
+
+                return {
+                    name: p.name,
+                    type: ext,
+                    path: `${importPath}/${p.name}.${ext}`,
+                };
+            }
+
+            return false;
+        }).filter(i => i);
+        
+        return imports;
+    }
+
+    return [];
 }
 
 /**
