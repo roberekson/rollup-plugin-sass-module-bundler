@@ -8,6 +8,7 @@ const path = require('path');
 const fs = require('fs');
 const Concat = require('concat-with-sourcemaps');
 const escapeRegex = require('escape-string-regexp');
+const stripbom = require('strip-bom');
 
 interface Options {
     exclude: string[];
@@ -76,8 +77,8 @@ const transpile = (scss, filepath, options) => {
             returnObj = {
                 ...returnObj,
                 file: outFile,
-                css: result.css ? result.css.toString() : '',
-                map: options.sourceMap && result.map ? result.map.toString().replace(new RegExp(escapeRegex(options.sourceRoot[0]), 'g'), options.outDir) : null,//cleanPath(result.map.toString(), options.sourceRoot) : null,
+                css: result.css ? stripbom(result.css.toString()) : '',
+                map: options.sourceMap && result.map ? stripbom(result.map.toString().replace(new RegExp(escapeRegex(options.sourceRoot[0]), 'g'), options.outDir)) : null,//cleanPath(result.map.toString(), options.sourceRoot) : null,
                 duration: result.stats.duration,
                 size: Buffer.byteLength(result.css, 'utf8'),
             };

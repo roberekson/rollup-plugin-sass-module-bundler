@@ -43,6 +43,7 @@
     "escape-string-regexp": "^3.0.0",
     "md5": "^2.2.1",
     "parse-es6-imports": "^1.0.1",
-    "sass": "^1.26.3"
+    "sass": "^1.26.3",
+    "strip-bom": "^4.0.0"
   }
 }
