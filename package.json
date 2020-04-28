@@ -1,6 +1,6 @@
 {
   "name": "rollup-plugin-sass-module-bundler",
-  "version": "1.0.0-beta.5",
+  "version": "1.0.0-rc.1",
   "description": "A Rollup plugin for transpiling and bunding sass/scss files using sass modules",
   "main": "dist/index.cjs.js",
   "module": "dist/index.esm.js",
@@ -12,6 +12,9 @@
     "type": "git",
     "url": "git+https://github.com/roberekson/rollup-plugin-sass-module-bundler.git"
   },
+  "files": [
+    "dist/*"
+  ],
   "keywords": [
     "rollup-plugin",
     "scss",
