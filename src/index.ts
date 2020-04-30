@@ -1,4 +1,4 @@
-import { createFilter,  } from '@rollup/pluginutils';
+import { createFilter } from '@rollup/pluginutils';
 
 const chalk = require('chalk');
 const md5 = require('md5');
@@ -89,19 +89,26 @@ const transpile = (scss, filepath, options) => {
             outputError(e, filepath);
         }
     }
-    
+
     return returnObj;
 }
 
 const loadCss = (key: string, options) => {
     let result = [];
-    
-    if (isCssFile(key) && !transpiledStylesheets.has(key)) {
-        result.push(transpile(stylesheets.get(key).code, key, options));
+    let realKey = '';
+
+    if (!fs.existsSync(key) && key.substr(-3) === '.js' && fs.existsSync(key.replace(/\.js$/, '.ts'))) {
+        realKey = key.replace(/\.js$/, '.ts');
+    } else {
+        realKey = key;
     }
 
-    if (stylesheets.has(key) && 'imports' in stylesheets.get(key)) {
-        stylesheets.get(key).imports.forEach(i => {
+    if (isCssFile(realKey) && !transpiledStylesheets.has(realKey)) {
+        result.push(transpile(stylesheets.get(realKey).code, realKey, options));
+    }
+
+    if (stylesheets.has(realKey) && 'imports' in stylesheets.get(realKey)) {
+        stylesheets.get(realKey).imports.forEach(i => {
             result = [
                 ...result,
                 ...loadCss(i.path, options)
@@ -129,11 +136,11 @@ const outputError = (e, filepath = ''): void => {
     }
 
     message = `\n-- ${errorTitle} ${'-'.repeat(47 - errorTitle.length)}\n`;
-    
+
     if (e.file || filepath) {
         message += `File: ${e.file !== 'stdin' ? e.file : filepath}\n`;
     }
-    
+
     if (e.line) {
         message += `Line: ${e.line}` + (e.column ? `:${e.column}\n` : '');
     } else {
@@ -145,14 +152,14 @@ const outputError = (e, filepath = ''): void => {
     if (e.message.includes('Can\'t find stylesheet')) {
         message += '\nHINT: Is your includePath correct?\n\n';
     }
-    
+
     message += `${'-'.repeat(50)}\n`;
 
     console.log(chalk.bold.red(message));
 }
 
 const getJsImports = (code: string, absolutePath: string): [] => {
-    
+
     // Needed to fix TypeScript injecting code above imports
     const importStart = code.indexOf('import');
 
@@ -172,7 +179,7 @@ const getJsImports = (code: string, absolutePath: string): [] => {
 
             return false;
         }).filter(i => i);
-        
+
         return imports;
     }
 
@@ -191,7 +198,7 @@ const getRealPath = (filepath, refPath) => {
 
     if (filepath[0] === '.') {
         realPath = path.resolve(path.dirname(refPath), filepath);
-    
+
     } else {
         realPath = `${process.cwd()}/node_modules/${filepath}`;
     }
@@ -234,7 +241,7 @@ const createGenerateBundle = (moduleOptions: Options) => function (options: Reco
     const transpileOptions = {
         ...moduleOptions,
     };
-    
+
     if (!(moduleOptions === null) && options.sourcemap !== false) {
         transpileOptions.sourceMap = true;
     }
@@ -249,7 +256,7 @@ const createGenerateBundle = (moduleOptions: Options) => function (options: Reco
 
     if (size > 0) {
         const concatenator = new Concat(transpileOptions.sourceMap, `${moduleOptions.outDir}/${bundleName}.css`, '\n');
-    
+
         transpileResult.forEach(result => {
             concatenator.add(result.file, result.css, transpileOptions.sourceMap ? result.map : '');
         });
@@ -269,12 +276,12 @@ const createGenerateBundle = (moduleOptions: Options) => function (options: Reco
                 fileName: `${filename}.map`,
             });
         }
-        
+
         console.log(chalk.green(`created ${chalk.bold(`${bundleName}.css (${formatSize(size)})`)} in ${chalk.bold(`${duration}ms`)}`));
     } else {
         this.warn(`Skipped empty file: ${bundleName}.css`);
     }
-    
+
     skipNext = true;
 
     return;
@@ -300,7 +307,7 @@ const formatSize = (size: number): string => {
         [3, 'KB'],
         [0, 'B'],
     ];
-    
+
     for (let i = 0; i < sizes.length; i++) {
         const [power, label] = sizes[i];
 

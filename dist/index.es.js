@@ -74,11 +74,18 @@ const transpile = (scss, filepath, options) => {
 };
 const loadCss = (key, options) => {
     let result = [];
-    if (isCssFile(key) && !transpiledStylesheets.has(key)) {
-        result.push(transpile(stylesheets.get(key).code, key, options));
+    let realKey = '';
+    if (!fs.existsSync(key) && key.substr(-3) === '.js' && fs.existsSync(key.replace(/\.js$/, '.ts'))) {
+        realKey = key.replace(/\.js$/, '.ts');
     }
-    if (stylesheets.has(key) && 'imports' in stylesheets.get(key)) {
-        stylesheets.get(key).imports.forEach(i => {
+    else {
+        realKey = key;
+    }
+    if (isCssFile(realKey) && !transpiledStylesheets.has(realKey)) {
+        result.push(transpile(stylesheets.get(realKey).code, realKey, options));
+    }
+    if (stylesheets.has(realKey) && 'imports' in stylesheets.get(realKey)) {
+        stylesheets.get(realKey).imports.forEach(i => {
             result = [
                 ...result,
                 ...loadCss(i.path, options)
