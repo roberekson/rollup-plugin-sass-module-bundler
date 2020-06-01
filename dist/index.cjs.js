@@ -167,6 +167,9 @@ const getRealPath = (filepath, refPath) => {
     return fs.realpathSync(realPath);
 };
 const addModuleToTree = (name, imports, code) => {
+    if (name.includes('\0')) {
+        return;
+    }
     const realName = fs.realpathSync(name);
     if (!stylesheets.has(realName)) {
         stylesheets.set(realName, {
