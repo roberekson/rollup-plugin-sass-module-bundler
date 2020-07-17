@@ -17,6 +17,7 @@ const defaultOptions = {
     outputStyle: "compressed",
     sourceMap: null,
     sourceRoot: [],
+    pathResolver: (url) => { return url; }
 };
 const stylesheets = new Map;
 const hashLength = 8;
@@ -45,6 +46,15 @@ const transpile = (scss, filepath, options) => {
                 includePaths: options.includePaths,
                 outFile: outFile,
                 outputStyle: options.outputStyle,
+                importer: (url, file) => {
+                    let resolvedUrl = options.pathResolver(url);
+                    if (resolvedUrl === undefined) {
+                        resolvedUrl = url;
+                    }
+                    return {
+                        file: resolvedUrl
+                    };
+                }
             };
             if (options.sourceMap) {
                 renderOptions = {
@@ -126,7 +136,7 @@ const outputError = (e, filepath = '') => {
     message += `${'-'.repeat(50)}\n`;
     console.log(chalk.bold.red(message));
 };
-const getJsImports = (code, absolutePath) => {
+const getJsImports = (code, absolutePath, pathResolver) => {
     // Needed to fix TypeScript injecting code above imports
     const importStart = code.indexOf('import');
     if (importStart >= 0) {
@@ -134,7 +144,11 @@ const getJsImports = (code, absolutePath) => {
             const p = path.parse(i.fromModule);
             const ext = p.ext ? p.ext.substr(1) : 'js';
             if (['scss', 'sass', 'css', 'ts', 'js'].includes(ext)) {
-                const importPath = getRealPath(p.dir, absolutePath);
+                let filepath = pathResolver(p.dir);
+                if (filepath === undefined) {
+                    filepath = p.dir;
+                }
+                const importPath = getRealPath(filepath, absolutePath);
                 return {
                     name: p.name,
                     type: ext,
@@ -176,9 +190,9 @@ const addModuleToTree = (name, imports, code) => {
         });
     }
 };
-const createTransform = (filter) => (code, id) => {
+const createTransform = (filter, pathResolver) => (code, id) => {
     if (!skipNext) {
-        const imports = getJsImports(code, id);
+        const imports = getJsImports(code, id, pathResolver);
         addModuleToTree(id, imports, code);
     }
     if (!filter(id)) {
@@ -274,7 +288,7 @@ var index = (options = {}) => {
     const filter = createFilter(moduleOptions.include, moduleOptions.exclude);
     return {
         name: 'scss-module-bundler',
-        transform: createTransform(filter),
+        transform: createTransform(filter, moduleOptions.pathResolver),
         watchChange,
         generateBundle: createGenerateBundle(moduleOptions),
         buildStart: () => {
