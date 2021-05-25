@@ -87,11 +87,12 @@ const transpile = (scss, filepath, options) => {
 const loadCss = (key, options) => {
     let result = [];
     let realKey = '';
-    if (!fs.existsSync(key) && key.substr(-3) === '.js' && fs.existsSync(key.replace(/\.js$/, '.ts'))) {
-        realKey = key.replace(/\.js$/, '.ts');
+    let escapedKey = key.replace('/', path.sep);
+    if (!fs.existsSync(escapedKey) && escapedKey.substr(-3) === '.js' && fs.existsSync(escapedKey.replace(/\.js$/, '.ts'))) {
+        realKey = escapedKey.replace(/\.js$/, '.ts');
     }
     else {
-        realKey = key;
+        realKey = escapedKey;
     }
     if (isCssFile(realKey) && !transpiledStylesheets.has(realKey)) {
         result.push(transpile(stylesheets.get(realKey).code, realKey, options));
