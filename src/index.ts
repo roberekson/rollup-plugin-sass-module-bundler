@@ -65,8 +65,7 @@ const transpile = (scss, filepath, options) => {
                 outputStyle: options.outputStyle,
                 importer: (url: string, file: string) => {
                     let resolvedUrl = options.pathResolver(url);
-                    if (resolvedUrl === undefined)
-                    {
+                    if (resolvedUrl === undefined) {
                         resolvedUrl = url;
                     }
                     return {
@@ -108,11 +107,12 @@ const transpile = (scss, filepath, options) => {
 const loadCss = (key: string, options) => {
     let result = [];
     let realKey = '';
+    let escapedKey = key.replace('/', path.sep);
 
-    if (!fs.existsSync(key) && key.substr(-3) === '.js' && fs.existsSync(key.replace(/\.js$/, '.ts'))) {
-        realKey = key.replace(/\.js$/, '.ts');
+    if (!fs.existsSync(escapedKey) && escapedKey.substr(-3) === '.js' && fs.existsSync(escapedKey.replace(/\.js$/, '.ts'))) {
+        realKey = escapedKey.replace(/\.js$/, '.ts');
     } else {
-        realKey = key;
+        realKey = escapedKey;
     }
 
     if (isCssFile(realKey) && !transpiledStylesheets.has(realKey)) {
@@ -181,8 +181,7 @@ const getJsImports = (code: string, absolutePath: string, pathResolver: (string)
             const ext = p.ext ? p.ext.substr(1) : 'js';
             if (['scss', 'sass', 'css', 'ts', 'js'].includes(ext)) {
                 let filepath = pathResolver(p.dir);
-                if (filepath === undefined)
-                {
+                if (filepath === undefined) {
                     filepath = p.dir;
                 }
                 const importPath = getRealPath(filepath, absolutePath)
@@ -224,7 +223,7 @@ const getRealPath = (filepath, refPath) => {
 };
 
 const addModuleToTree = (name: string, imports, code: string) => {
-    if(name.includes('\0')) {
+    if (name.includes('\0')) {
         return;
     }
 
