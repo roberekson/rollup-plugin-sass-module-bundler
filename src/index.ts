@@ -34,7 +34,7 @@ const defaultOptions: Options = {
 
 const stylesheets = new Map;
 const hashLength = 8;
-const transpiledStylesheets = new Set;
+const transpiledStylesheets: Map<string, Record<string, any>> = new Map;
 let skipNext = false;
 
 const transpile = (scss, filepath, options) => {
@@ -94,7 +94,7 @@ const transpile = (scss, filepath, options) => {
                 size: Buffer.byteLength(result.css, 'utf8'),
             };
 
-            transpiledStylesheets.add(filepath);
+            transpiledStylesheets.set(filepath, returnObj);
 
         } catch (e) {
             outputError(e, filepath);
@@ -115,25 +115,29 @@ const getRealKey = (key: string): string => {
 
 }
 
-const loadCss = (key: string, options) => {
+const loadCss = (key: string, options, includedFiles: Set<string> = new Set) => {
     let result = [];
     let realKey = getRealKey(key);
 
+    includedFiles.add(realKey);
+
     if (isCssFile(realKey) && !transpiledStylesheets.has(realKey)) {
         result.push(transpile(stylesheets.get(realKey).code, realKey, options));
-    } else if (transpiledStylesheets.has(realKey)) {
-        return;
     }
 
     if (stylesheets.has(realKey) && 'imports' in stylesheets.get(realKey)) {
         stylesheets.get(realKey).imports.forEach(i => {
             const importKey = getRealKey(i.path);
-            if (!stylesheets.has(importKey)) {
-                result = [
-                    ...result,
-                    ...loadCss(i.path, options)
-                ];
+
+            if (includedFiles.has(importKey)) {
+                return;
             }
+
+            const css = transpiledStylesheets.has(importKey) ? [transpiledStylesheets.get(importKey)] : loadCss(i.path, options, includedFiles);
+            result = [
+                ...result,
+                ...css,
+            ];
         });
     }
 
