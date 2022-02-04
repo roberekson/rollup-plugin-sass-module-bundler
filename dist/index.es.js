@@ -149,7 +149,9 @@ const getJsImports = (code, absolutePath, pathResolver) => {
     // Needed to fix TypeScript injecting code above imports
     const importStart = code.indexOf('import');
     if (importStart >= 0) {
-        const imports = parseImports(code.substr(code.indexOf('import'))).map(i => {
+        const imports = parseImports(code.substr(code.indexOf('import')))
+            .filter(i => !i.fromModule.startsWith('\\u0000'))
+            .map(i => {
             const p = path.parse(i.fromModule);
             const ext = p.ext ? p.ext.substr(1) : 'js';
             if (['scss', 'sass', 'css', 'ts', 'js'].includes(ext)) {
@@ -165,7 +167,8 @@ const getJsImports = (code, absolutePath, pathResolver) => {
                 };
             }
             return false;
-        }).filter(i => i);
+        })
+            .filter(i => i);
         return imports;
     }
     return [];
