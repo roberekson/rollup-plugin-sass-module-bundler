@@ -189,25 +189,28 @@ const getJsImports = (code: string, absolutePath: string, pathResolver: (string)
     const importStart = code.indexOf('import');
 
     if (importStart >= 0) {
-        const imports = parseImports(code.substr(code.indexOf('import'))).map(i => {
-            const p = path.parse(i.fromModule);
-            const ext = p.ext ? p.ext.substr(1) : 'js';
-            if (['scss', 'sass', 'css', 'ts', 'js'].includes(ext)) {
-                let filepath = pathResolver(p.dir);
-                if (filepath === undefined) {
-                    filepath = p.dir;
+        const imports = parseImports(code.substr(code.indexOf('import')))
+            .filter(i => !i.fromModule.startsWith('\\u0000'))
+            .map(i => {
+                const p = path.parse(i.fromModule);
+                const ext = p.ext ? p.ext.substr(1) : 'js';
+                if (['scss', 'sass', 'css', 'ts', 'js'].includes(ext)) {
+                    let filepath = pathResolver(p.dir);
+                    if (filepath === undefined) {
+                        filepath = p.dir;
+                    }
+                    const importPath = getRealPath(filepath, absolutePath)
+
+                    return {
+                        name: p.name,
+                        type: ext,
+                        path: `${importPath}/${p.name}.${ext}`,
+                    };
                 }
-                const importPath = getRealPath(filepath, absolutePath)
 
-                return {
-                    name: p.name,
-                    type: ext,
-                    path: `${importPath}/${p.name}.${ext}`,
-                };
-            }
-
-            return false;
-        }).filter(i => i);
+                return false;
+            })
+            .filter(i => i);
 
         return imports;
     }
@@ -219,7 +222,7 @@ const getJsImports = (code: string, absolutePath: string, pathResolver: (string)
  * Assumptions are being made here:
  * - If the path starts with a '.', then we assume it's relative to the refPath and will be resolved
  * - Otherwise assume it's located in the node_modules directory of the process's directory
- * 
+ *
  * TO DO: Walk directory tree and find closest node_modules directory
  */
 const getRealPath = (filepath, refPath) => {
