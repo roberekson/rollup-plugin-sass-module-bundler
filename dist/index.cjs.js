@@ -152,7 +152,7 @@ const getJsImports = (code, absolutePath, pathResolver) => {
     const importStart = code.indexOf('import');
     if (importStart >= 0) {
         const imports = parseImports(code.substr(code.indexOf('import')))
-            .filter(i => !checkForBom(i.fromModule))
+            .filter(i => !hasBom(i.fromModule))
             .map(i => {
             const p = path.parse(i.fromModule);
             const ext = p.ext ? p.ext.substr(1) : 'js';
@@ -294,8 +294,8 @@ const getBundleName = (bundle) => {
     }
     return '';
 };
-const checkForBom = (module) => {
-    if (module.startsWith('\0')) {
+const hasBom = (module) => {
+    if (!module.search(/\0/)) {
         return true;
     }
     return false;
